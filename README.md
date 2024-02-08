@@ -1,0 +1,2 @@
+# idbdownsampler
+InfluxDB metrics downsampler
