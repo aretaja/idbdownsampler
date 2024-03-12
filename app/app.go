@@ -333,7 +333,15 @@ func (a *App) getDsInstances(b bucket, c string) (map[string][]string, error) {
 }
 
 func (b *bucket) lastTS(i influx, inst, col string) (time.Time, error) {
-	var lt time.Time
+	now := time.Now()
+	// Return timestamp of now - retention period by default
+	lt := now.Add(-1 * b.rPeriod)
+	// Set query start time to retention period
+	fTS := lt
+	// Set query start time to retention period of "from" bucket if exists
+	if b.from != nil {
+		fTS = now.Add(-1 * b.from.rPeriod)
+	}
 	var f string
 	switch col {
 	case "iftraffic":
@@ -351,13 +359,13 @@ func (b *bucket) lastTS(i influx, inst, col string) (time.Time, error) {
 
 	q := `allData =
     	from(bucket: "` + b.name + `")
-			|> range(start: 0)
+			|> range(start: ` + fmt.Sprintf("%d", fTS.Unix()) + `)
 			|> filter(fn: (r) => ` + f + `)
 			|> keep(columns: ["_time"])
 			|> max(column: "_time")
 			|> yield()`
 
-	helpers.PrintDbg(fmt.Sprintf("first-last query for %s:\n %s", b.name, q))
+	helpers.PrintDbg(fmt.Sprintf("lastTS query for %s:\n %s", b.name, q))
 
 	// Get query client
 	queryAPI := i.client.QueryAPI(i.org)
