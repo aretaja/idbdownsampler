@@ -15,6 +15,8 @@ type Configuration struct {
 	DsCollections string  `env:"IDBDS_DSCOLLECTIONS"`
 	MemLimit      float64 `env:"IDBDS_MEMLIMIT"`
 	AggrCnt       int     `env:"IDBDS_AGGRCNT"`
+	CardMedium    int     `env:"IDBDS_CARDMEDIUM"`
+	CardHevy      int     `env:"IDBDS_CARDHEVY"`
 }
 
 // Fills Configuration struct. Prefers environment variables
@@ -25,7 +27,7 @@ func GetConfig() (*Configuration, error) {
 	if os.Getenv("IDBDS_CONF") != "" {
 		f = os.Getenv("IDBDS_CONF")
 	}
-	if os.Getenv("IDBDS_TESTDB") != "" { /*  */
+	if os.Getenv("IDBDS_TESTDB") != "" {
 		f = "/opt/idbdownsampler/etc/idbdownsampler_testdb.conf"
 	}
 

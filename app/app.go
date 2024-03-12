@@ -315,12 +315,12 @@ func (a *App) getDsInstances(b bucket, c string) (map[string][]string, error) {
 		helpers.PrintDbg(fmt.Sprintf("cardinality of %s in %s: %d", v, b.name, card))
 
 		switch {
-		case card < 100:
-			cInst["c10"] = append(cInst["c10"], v)
-		case card < 1000:
-			cInst["c5"] = append(cInst["c5"], v)
+		case card < a.conf.CardMedium:
+			cInst["light"] = append(cInst["light"], v)
+		case card < a.conf.CardHevy:
+			cInst["medium"] = append(cInst["medium"], v)
 		default:
-			cInst["c1"] = append(cInst["c1"], v)
+			cInst["hevy"] = append(cInst["hevy"], v)
 		}
 	}
 
@@ -662,7 +662,15 @@ func (a *App) workOn(c, cg string, buckets []bucket, instances []string) error {
 				}
 			}
 		}
-		helpers.PrintInfo(fmt.Sprintf("collection %s %s done, elapsed: %s", c, cg, time.Since(ts).String()))
+
+		elapsed := time.Since(ts)
+		helpers.PrintInfo(fmt.Sprintf("collection %s %s done, elapsed: %s", c, cg, elapsed.String()))
+		if elapsed < 3*time.Hour {
+			sd := 3*time.Hour - elapsed
+			helpers.PrintInfo(fmt.Sprintf("minimum downsample interval is 3h, sleeping %s", sd.String()))
+			time.Sleep(sd)
+			continue
+		}
 		firstRun = false
 		ts = time.Now()
 	}

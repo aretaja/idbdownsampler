@@ -13,11 +13,12 @@ import (
 )
 
 // Version of release
-const version = "0.0.1-devel.13"
+const version = "0.0.1-devel.15"
 
 func main() {
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
 
+	helpers.PrintInfo("start influxdb downsampler")
 	helpers.PrintDbg("initializing app")
 	a := new(app.App)
 	a.Version = version
