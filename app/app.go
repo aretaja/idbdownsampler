@@ -143,7 +143,8 @@ func (a *App) collectionBuckets(s string) ([]bucket, error) {
 func (a *App) getRunningTasks() (*float64, error) {
 	qMemUsage := `from(bucket: "` + a.conf.StatsBucket + `")
   |> range(start: -15s)
-  |> filter(fn: (r) => r["_measurement"] == "task_executor_total_runs_active" and r._field == "gauge")
+  |> filter(fn: (r) => r["_measurement"] == "task_executor_total_runs_active"
+      and r._field == "gauge")
   |> last()`
 
 	var count *float64
@@ -172,12 +173,14 @@ func (a *App) getRunningTasks() (*float64, error) {
 func (a *App) getMemUsage() (*float64, error) {
 	qMemUsage := `bytes_used = from(bucket: "` + a.conf.StatsBucket + `")
 	|> range(start: -15s)
-	|> filter(fn: (r) => r._measurement == "go_memstats_alloc_bytes" and r._field == "gauge")
+	|> filter(fn: (r) => r._measurement == "go_memstats_alloc_bytes"
+	    and r._field == "gauge")
 	|> last()
 
 	total_bytes = from(bucket: "` + a.conf.StatsBucket + `")
 		|> range(start: -15s)
-		|> filter(fn: (r) => r._measurement == "go_memstats_sys_bytes" and r._field == "gauge")
+		|> filter(fn: (r) => r._measurement == "go_memstats_sys_bytes"
+		    and r._field == "gauge")
 		|> last()
 
 	join(tables: {key1: bytes_used, key2: total_bytes}, on: ["_time", "_field"], method: "inner")
@@ -269,14 +272,16 @@ func (a *App) getDsInstances(b bucket, c string) (map[string][]string, error) {
 	case "iftraffic":
 		q = `from(bucket: "` + b.name + `")
 		|> range(start: ` + fmt.Sprintf("%d", st) + `)
-		|> filter(fn: (r) => r._measurement == "ifstats" and r._field == "ifAdminStatus")
+		|> filter(fn: (r) => r._measurement == "ifstats"
+		    and r._field == "ifAdminStatus")
 		|> keyValues(keyColumns: ["agent_name"])
 		|> keep(columns: ["_value"])
 		|> unique()`
 	case "icingachk":
 		q = `from(bucket: "` + b.name + `")
 		|> range(start: ` + fmt.Sprintf("%d", st) + `)
-		|> filter(fn: (r) => r._measurement =~ /^my-hostalive-/ and r._field == "value")
+		|> filter(fn: (r) => r._measurement =~ /^my-hostalive-/
+		    and r._field == "value")
 		|> keyValues(keyColumns: ["hostname"])
 		|> keep(columns: ["_value"])
 		|> unique()`
@@ -332,9 +337,14 @@ func (b *bucket) lastTS(i influx, inst, col string) (time.Time, error) {
 	var f string
 	switch col {
 	case "iftraffic":
-		f = `r._measurement == "ifstats" and r["agent_name"] == "` + inst + `" and r._field == "ifAdminStatus"`
+		f = `r._measurement == "ifstats"
+		    and r["agent_name"] == "` + inst + `"
+			and r._field == "ifAdminStatus"
+			and r["ifName"] =~ /./`
 	case "icingachk":
-		f = `r._measurement =~ /^my-hostalive-/ and r["hostname"] == "` + inst + `" and r._field == "value"`
+		f = `r._measurement =~ /^my-hostalive-/
+		    and r["hostname"] == "` + inst + `"
+			and r._field == "value"`
 	default:
 		return lt, fmt.Errorf("unknown collection %s", col)
 	}
@@ -473,7 +483,9 @@ func (a *App) downsample(b bucket, inst string, col string) error {
 			q = `allData =
 			from(bucket: "` + b.from.name + `")
 			  |> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
-			  |> filter(fn: (r) => r._measurement == "ifstats" and r["agent_name"] == "` + inst + `")
+			  |> filter(fn: (r) => r._measurement == "ifstats"
+			      and r["agent_name"] == "` + inst + `"
+				  and r["ifName"] =~ /./)
 
 			toCounterData =
 				allData
@@ -512,7 +524,9 @@ func (a *App) downsample(b bucket, inst string, col string) error {
 			q = `allData =
 				from(bucket: "` + b.from.name + `")
 					|> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
-					|> filter(fn: (r) => r._measurement == "ifstats" and r["agent_name"] == "` + inst + `")
+					|> filter(fn: (r) => r._measurement == "ifstats"
+					    and r["agent_name"] == "` + inst + `"
+						and r["ifName"] =~ /./)
 
 				allData
 					|> filter(fn: (r) => r["aggregate"] == "max")
@@ -532,7 +546,8 @@ func (a *App) downsample(b bucket, inst string, col string) error {
 			q = `allData =
 					from(bucket: "` + b.from.name + `")
 						|> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
-						|> filter(fn: (r) => r["hostname"] == "` + inst + `" and r._field !~ /^(current_attempt|max_check_attempts|state|state_type|execution_time|latency|reachable|acknowledgement|downtime_depth)$/)
+						|> filter(fn: (r) => r["hostname"] == "` + inst + `"
+						    and r._field !~ /^(current_attempt|max_check_attempts|state|state_type|execution_time|latency|reachable|acknowledgement|downtime_depth)$/)
 
 				toMeanData =
 					allData
@@ -565,7 +580,8 @@ func (a *App) downsample(b bucket, inst string, col string) error {
 			q = `allData =
 					from(bucket: "` + b.from.name + `")
 						|> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
-						|> filter(fn: (r) => r["hostname"] == "` + inst + `" and r._field !~ /^(current_attempt|max_check_attempts|state|state_type)$/)
+						|> filter(fn: (r) => r["hostname"] == "` + inst + `"
+						    and r._field !~ /^(current_attempt|max_check_attempts|state|state_type)$/)
 
 				toMeanData =
 					allData

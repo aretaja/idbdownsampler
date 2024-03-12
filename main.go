@@ -13,7 +13,7 @@ import (
 )
 
 // Version of release
-const version = "0.0.1-devel.15"
+const version = "0.0.1-devel.16"
 
 func main() {
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
