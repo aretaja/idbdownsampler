@@ -280,7 +280,9 @@ func (a *App) getDsInstances(b bucket, c string) (map[string][]string, error) {
 	case "icingachk":
 		q = `from(bucket: "` + b.name + `")
 		|> range(start: ` + fmt.Sprintf("%d", st) + `)
-		|> filter(fn: (r) => r._measurement =~ /^my-hostalive-/
+		|> filter(fn: (r) => (r._measurement == "my-hostalive-icmp"
+				or r._measurement == "my-hostalive-tcp"
+				or r._measurement == "my-hostalive-http")
 		    and r._field == "value")
 		|> keyValues(keyColumns: ["hostname"])
 		|> keep(columns: ["_value"])
@@ -347,23 +349,23 @@ func (b *bucket) lastTS(i influx, inst, col string) (time.Time, error) {
 	case "iftraffic":
 		f = `r._measurement == "ifstats"
 		    and r["agent_name"] == "` + inst + `"
-			and r._field == "ifAdminStatus"
-			and r["ifName"] =~ /./`
+			and r._field == "ifAdminStatus"`
 	case "icingachk":
-		f = `r._measurement =~ /^my-hostalive-/
+		f = `(r._measurement == "my-hostalive-icmp"
+				or r._measurement == "my-hostalive-tcp"
+				or r._measurement == "my-hostalive-http")
 		    and r["hostname"] == "` + inst + `"
 			and r._field == "value"`
 	default:
 		return lt, fmt.Errorf("unknown collection %s", col)
 	}
 
-	q := `allData =
-    	from(bucket: "` + b.name + `")
+	q := `from(bucket: "` + b.name + `")
 			|> range(start: ` + fmt.Sprintf("%d", fTS.Unix()) + `)
 			|> filter(fn: (r) => ` + f + `)
-			|> keep(columns: ["_time"])
-			|> max(column: "_time")
-			|> yield()`
+			|> group()
+			|> last()
+			|> keep(columns: ["_time"])`
 
 	helpers.PrintDbg(fmt.Sprintf("lastTS query for %s:\n %s", b.name, q))
 
@@ -492,8 +494,7 @@ func (a *App) downsample(b bucket, inst string, col string) error {
 			from(bucket: "` + b.from.name + `")
 			  |> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
 			  |> filter(fn: (r) => r._measurement == "ifstats"
-			      and r["agent_name"] == "` + inst + `"
-				  and r["ifName"] =~ /./)
+			      and r["agent_name"] == "` + inst + `")
 
 			toCounterData =
 				allData
@@ -533,8 +534,7 @@ func (a *App) downsample(b bucket, inst string, col string) error {
 				from(bucket: "` + b.from.name + `")
 					|> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
 					|> filter(fn: (r) => r._measurement == "ifstats"
-					    and r["agent_name"] == "` + inst + `"
-						and r["ifName"] =~ /./)
+					    and r["agent_name"] == "` + inst + `")
 
 				allData
 					|> filter(fn: (r) => r["aggregate"] == "max")
