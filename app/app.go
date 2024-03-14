@@ -25,26 +25,37 @@ type App struct {
 func (a *App) Initialize() {
 	a.startTS = time.Now()
 
-	// Config
+	// Check if config can be obtained
 	c, err := config.GetConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to get config: %v", err)
 	}
 	a.conf = c
 
+	// Check if config parameters are valid
+	if c.DbURL == "" || c.Token == "" || c.Org == "" || c.StatsBucket == "" {
+		log.Fatal("invalid config: missing required parameters")
+	}
+
+	// Check if collections are provided
+	if c.DsCollections == "" {
+		log.Fatal("no collections for downsampling provided, interrupting")
+	}
+
+	// Create Influx instance
 	a.db = db.NewInflux(c.DbURL, c.Token, c.Org, c.StatsBucket, 600)
 
-	// Use memory limit from config when present
+	// Set memory limit if provided
 	if c.MemLimit > 0 {
 		a.db.DsMemLimit = c.MemLimit
 	}
 
-	// Use aggregation count from config when present
+	// Set aggregation count if provided
 	if c.AggrCnt > 0 {
 		a.db.AggrCnt = c.AggrCnt
 	}
 
-	// Use cardinality levels from config when present
+	// Set cardinality levels if provided
 	if c.CardMedium > 0 {
 		a.db.CardMedium = c.CardMedium
 	}
@@ -52,11 +63,8 @@ func (a *App) Initialize() {
 		a.db.CardHevy = c.CardHevy
 	}
 
-	if c.DsCollections != "" {
-		a.dsCollections = strings.Split(c.DsCollections, ",")
-	} else {
-		helpers.PrintFatal("no collections for downsampling provided, interrupting")
-	}
+	// Split collections
+	a.dsCollections = strings.Split(c.DsCollections, ",")
 }
 
 func (a *App) collectionBuckets(s string) ([]db.Bucket, error) {

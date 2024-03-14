@@ -1,7 +1,7 @@
 // Copyright 2024 by Marko Punnar <marko[AT]aretaja.org>
 // Use of this source code is governed by a Apache License 2.0 that can be found in the LICENSE file.
 
-// idbdownsampler is external application for InfluxDB downsampling InfluxDB metrics
+// idbdownsampler is external application for downsampling InfluxDB metrics
 
 package main
 
@@ -13,15 +13,18 @@ import (
 )
 
 // Version of release
-const version = "0.0.1-devel.19"
+const version = "0.0.1-devel.20"
 
 func main() {
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
 
 	helpers.PrintInfo("start influxdb downsampler")
 	helpers.PrintDbg("initializing app")
-	a := new(app.App)
-	a.Version = version
+
+	a := &app.App{
+		Version: version,
+	}
+
 	a.Initialize()
 
 	helpers.PrintDbg("app initialized")

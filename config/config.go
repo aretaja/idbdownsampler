@@ -32,6 +32,9 @@ func GetConfig() (*Configuration, error) {
 	}
 
 	err := gonfig.GetConf(f, conf)
+	if err != nil {
+		return nil, err
+	}
 
-	return conf, err
+	return conf, nil
 }
