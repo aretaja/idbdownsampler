@@ -1,0 +1,18 @@
+[Unit]
+Description=influxdb downsampler
+After=syslog.target
+After=network.target
+Requires=influxdb.service
+
+[Service]
+RestartSec=30s
+Type=simple
+User=idbds
+Group=nogroup
+ExecStart=/opt/idbdownsampler/bin/idbdownsampler
+Restart=always
+StandardOutput=append:/var/log/custom/idbdownsampler.log
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
