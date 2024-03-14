@@ -253,7 +253,6 @@ func (a *App) workOn(c, cg string, buckets []db.Bucket, instances []string) erro
 			sd := 3*time.Hour - elapsed
 			helpers.PrintInfo(fmt.Sprintf("minimum downsample interval is 3h, collection %s %s sleeping %s", c, cg, sd.String()))
 			time.Sleep(sd)
-			continue
 		}
 		firstRun = false
 		ts = time.Now()
