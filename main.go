@@ -15,6 +15,10 @@ import (
 // Version of release
 const version = "0.0.1-devel.20"
 
+// main is the entry point of the program.
+//
+// No parameters.
+// No return values.
 func main() {
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
 

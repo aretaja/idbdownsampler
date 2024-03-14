@@ -52,6 +52,9 @@ func NewInflux(url, token, org, sb string, timeout uint) Influx {
 	return db
 }
 
+// GetRunningTasks retrieves the count of running tasks from InfluxDB.
+//
+// Returns a pointer to float64 and an error.
 func (i *Influx) GetRunningTasks() (*float64, error) {
 	q := `from(bucket: "` + i.Statsb + `")
   |> range(start: -15s)
@@ -82,6 +85,10 @@ func (i *Influx) GetRunningTasks() (*float64, error) {
 	return count, nil
 }
 
+// GetMemUsage retrieves the memory usage percentage from Influx database.
+//
+// No parameters.
+// Returns a pointer to float64 and an error.
 func (i *Influx) GetMemUsage() (*float64, error) {
 	q := `bytes_used = from(bucket: "` + i.Statsb + `")
 	|> range(start: -15s)
@@ -123,6 +130,17 @@ func (i *Influx) GetMemUsage() (*float64, error) {
 	return used, nil
 }
 
+// Cardinality retrieves the cardinality for a given instance in a bucket.
+//
+// Parameters:
+//
+//	b *Bucket - the bucket object
+//	inst string - the instance name
+//
+// Returns:
+//
+//	int - the cardinality count
+//	error - an error, if any
 func (i *Influx) Cardinality(b *Bucket, inst string) (int, error) {
 	var c int
 	q := `import "influxdata/influxdb"
@@ -153,6 +171,17 @@ func (i *Influx) Cardinality(b *Bucket, inst string) (int, error) {
 	return c, nil
 }
 
+// GetDsInstances retrieves instances for the given bucket based on collection type, and groups them by cardinality.
+//
+// Parameters:
+//
+//	b: *Bucket - the bucket for which to retrieve instances
+//	c: string - the collection type
+//
+// Return:
+//
+//	map[string][]string - a map of instance groups by cardinality
+//	error - an error, if any
 func (i *Influx) GetDsInstances(b *Bucket, c string) (map[string][]string, error) {
 	st := time.Now().Add(-2 * b.AInterv).Unix() // now - 2 * aggregation duration
 	var instances []string
@@ -224,6 +253,18 @@ func (i *Influx) GetDsInstances(b *Bucket, c string) (map[string][]string, error
 	return cInst, nil
 }
 
+// LastTS returns the timestamp of the latest data point for a given instance in a bucket based on collection.
+//
+// Parameters:
+//
+//	b *Bucket - the bucket to query
+//	inst string - the instance name
+//	col string - the collection
+//
+// Return:
+//
+//	time.Time - the timestamp of the latest data point
+//	error - any error that occurred during the query
 func (i *Influx) LastTS(b *Bucket, inst, col string) (time.Time, error) {
 	now := time.Now()
 	// Return timestamp of now - retention period by default
@@ -278,6 +319,8 @@ func (i *Influx) LastTS(b *Bucket, inst, col string) (time.Time, error) {
 	return lt, nil
 }
 
+// Downsample performs downsampling of measurements of the given instance in the bucket based on collection.
+// It returns an error, if any.
 func (i *Influx) Downsample(b *Bucket, inst string, col string) error {
 	// Default range start timestamp for influx query (now - retention period of source bucket)
 	now := time.Now()

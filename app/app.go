@@ -22,6 +22,9 @@ type App struct {
 	db            db.Influx
 }
 
+// Initialize initializes the App struct by setting up configuration, database connection, memory limits, aggregation counts, and cardinality levels.
+//
+// This function does not take any parameters and does not return any values.
 func (a *App) Initialize() {
 	a.startTS = time.Now()
 
@@ -67,6 +70,8 @@ func (a *App) Initialize() {
 	a.dsCollections = strings.Split(c.DsCollections, ",")
 }
 
+// collectionBuckets returns the collection of buckets for the given collection name.
+// It takes a string parameter 's' representing the collection name and returns a slice of db.Bucket and an error.
 func (a *App) collectionBuckets(s string) ([]db.Bucket, error) {
 	// iftraffic buckets
 	b2d := db.Bucket{
@@ -129,6 +134,11 @@ func (a *App) collectionBuckets(s string) ([]db.Bucket, error) {
 	return nil, fmt.Errorf("unknown collection %s", s)
 }
 
+// startResMon starts a resource monitor goroutine that continuously checks for running tasks and used memory.
+// Toggles the boolean flag a.db.DbHasResources.
+//
+// No parameters.
+// No return types.
 func (a *App) startResMon() {
 	interv := 10
 	ticker := time.NewTicker(time.Duration(interv) * time.Second)
@@ -180,6 +190,16 @@ func (a *App) startResMon() {
 	}()
 }
 
+// workOn performs downsampling on buckets of given collection group.
+//
+// Parameters:
+//
+//	c: string representing collection
+//	cg: string representing collection group
+//	buckets: slice of Bucket structs
+//	instances: slice of downsample target instances
+//
+// Return type: error
 func (a *App) workOn(c, cg string, buckets []db.Bucket, instances []string) error {
 	ts := time.Now()
 	firstRun := true
@@ -240,6 +260,9 @@ func (a *App) workOn(c, cg string, buckets []db.Bucket, instances []string) erro
 	}
 }
 
+// Run starts the application and performs downsampling tasks concurrently.
+//
+// This function does not take any parameters and does not have a return type.
 func (a *App) Run() {
 	a.startResMon()
 
