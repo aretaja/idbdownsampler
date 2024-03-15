@@ -1,0 +1,11 @@
+{
+    "DbURL": "<influxdb api url:port>",
+    "Token": "<influxdb token>",
+    "Org": "<influxdb org>",
+    "StatsBucket": "<influxdb stats bucket>",
+    "DsCollections": "iftraffic,icingachk",
+    "MemLimit": 60,
+    "AggrCnt": 8,
+    "CardMedium": 55,
+    "CardHevy": 1000
+}
