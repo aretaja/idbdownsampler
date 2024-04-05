@@ -189,7 +189,7 @@ func (i *Influx) GetDsInstances(b *Bucket, c string) (map[string][]string, error
 
 	// flux query
 	switch c {
-	case "iftraffic":
+	case "ifstats":
 		q = `from(bucket: "` + b.Name + `")
 		|> range(start: ` + fmt.Sprintf("%d", st) + `)
 		|> filter(fn: (r) => r._measurement == "ifstats"
@@ -277,7 +277,7 @@ func (i *Influx) LastTS(b *Bucket, inst, col string) (time.Time, error) {
 	}
 	var f string
 	switch col {
-	case "iftraffic":
+	case "ifstats":
 		f = `r._measurement == "ifstats"
 		    and r["agent_name"] == "` + inst + `"
 			and r._field == "ifAdminStatus"`
@@ -392,7 +392,7 @@ func (i *Influx) Downsample(b *Bucket, inst string, col string) error {
 
 		var q string
 		switch {
-		case b.From.First && col == "iftraffic":
+		case b.From.First && col == "ifstats":
 			q = `allData =
 			from(bucket: "` + b.From.Name + `")
 			  |> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
@@ -432,7 +432,7 @@ func (i *Influx) Downsample(b *Bucket, inst string, col string) error {
 				|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: max, createEmpty: false)
 				|> set(key: "aggregate", value: "max")
 				|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")`
-		case !b.From.First && col == "iftraffic":
+		case !b.From.First && col == "ifstats":
 			q = `allData =
 				from(bucket: "` + b.From.Name + `")
 					|> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)

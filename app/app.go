@@ -73,7 +73,7 @@ func (a *App) Initialize() {
 // collectionBuckets returns the collection of buckets for the given collection name.
 // It takes a string parameter 's' representing the collection name and returns a slice of db.Bucket and an error.
 func (a *App) collectionBuckets(s string) ([]db.Bucket, error) {
-	// iftraffic buckets
+	// Buckets for idnterface stats from telegraf
 	b2d := db.Bucket{
 		Name:    "telegraf/2d",
 		First:   true,
@@ -102,7 +102,7 @@ func (a *App) collectionBuckets(s string) ([]db.Bucket, error) {
 		RPeriod: 17520 * time.Hour,
 	}
 
-	// icingachk buckets
+	// Buckets for icingachk
 	b1w := db.Bucket{
 		Name:    "icinga2/one_week",
 		First:   true,
@@ -126,6 +126,8 @@ func (a *App) collectionBuckets(s string) ([]db.Bucket, error) {
 
 	collections := make(map[string][]db.Bucket)
 	collections["iftraffic"] = []db.Bucket{b2d, b7d, b28d, b730d}
+	collections["ifstats"] = []db.Bucket{b2d, b7d, b28d, b730d}
+	collections["gengauge"] = []db.Bucket{b2d, b7d, b28d, b730d}
 	collections["icingachk"] = []db.Bucket{b1w, b4w, ball}
 
 	if c, ok := collections[s]; ok {
