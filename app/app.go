@@ -251,9 +251,9 @@ func (a *App) workOn(c, cg string, buckets []db.Bucket, instances []string) erro
 
 		elapsed := time.Since(ts)
 		helpers.PrintInfo(fmt.Sprintf("collection %s %s done, elapsed: %s", c, cg, elapsed.String()))
-		if elapsed < 3*time.Hour {
-			sd := 3*time.Hour - elapsed
-			helpers.PrintInfo(fmt.Sprintf("minimum downsample interval is 3h, collection %s %s sleeping %s", c, cg, sd.String()))
+		sd := 3*time.Hour - (elapsed + elapsed/2)
+		if sd > 0 {
+			helpers.PrintInfo(fmt.Sprintf("too soon for the next iteration, collection %s %s sleeping %s", c, cg, sd.String()))
 			time.Sleep(sd)
 		}
 		firstRun = false
