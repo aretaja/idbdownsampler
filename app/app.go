@@ -128,6 +128,7 @@ func (a *App) collectionBuckets(s string) ([]db.Bucket, error) {
 	collections["iftraffic"] = []db.Bucket{b2d, b7d, b28d, b730d}
 	collections["ifstats"] = []db.Bucket{b2d, b7d, b28d, b730d}
 	collections["gengauge"] = []db.Bucket{b2d, b7d, b28d, b730d}
+	collections["gencounter"] = []db.Bucket{b2d, b7d, b28d, b730d}
 	collections["icingachk"] = []db.Bucket{b1w, b4w, ball}
 
 	if c, ok := collections[s]; ok {
