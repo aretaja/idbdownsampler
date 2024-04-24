@@ -183,45 +183,21 @@ func (i *Influx) Cardinality(b *Bucket, inst string) (int, error) {
 //	map[string][]string - a map of instance groups by cardinality
 //	error - an error, if any
 func (i *Influx) GetDsInstances(b *Bucket, c string) (map[string][]string, error) {
-	st := time.Now().Add(-2 * b.AInterv).Unix() // now - 2 * aggregation duration
+	st := time.Now().Add(-10 * b.AInterv).Unix() // now - 10 * aggregation duration
 	var instances []string
 	var q string
 
 	// flux query
-	switch c {
-	case "ifstats":
-		q = `from(bucket: "` + b.Name + `")
-		|> range(start: ` + fmt.Sprintf("%d", st) + `)
-		|> filter(fn: (r) => r._measurement == "ifstats"
-		    and r._field == "ifAdminStatus")
-		|> keyValues(keyColumns: ["agent_name"])
-		|> keep(columns: ["_value"])
-		|> unique()`
-	case "iftraffic":
-		q = `from(bucket: "` + b.Name + `")
-		|> range(start: ` + fmt.Sprintf("%d", st) + `)
-		|> filter(fn: (r) => r._measurement == "iftraffic"
-		    and r._field == "ifOperStatus")
-		|> keyValues(keyColumns: ["agent_name"])
-		|> keep(columns: ["_value"])
-		|> unique()`
-	case "gengauge":
-		q = `from(bucket: "` + b.Name + `")
-		|> range(start: ` + fmt.Sprintf("%d", st) + `)
-		|> filter(fn: (r) => r._measurement == "gengauge"
-		    and r._field == "InPower")
-		|> keyValues(keyColumns: ["agent_name"])
-		|> keep(columns: ["_value"])
-		|> unique()`
-	case "gencounter":
-		q = `from(bucket: "` + b.Name + `")
-		|> range(start: ` + fmt.Sprintf("%d", st) + `)
-		|> filter(fn: (r) => r._measurement == "gencounter"
-		    and r._field == "feCor")
-		|> keyValues(keyColumns: ["agent_name"])
-		|> keep(columns: ["_value"])
-		|> unique()`
-	case "icingachk":
+	switch {
+	case c == "ifstats" || c == "iftraffic" || c == "gengauge" || c == "gencounter":
+		q = `import "influxdata/influxdb/schema"
+		schema.measurementTagValues(
+			bucket: "` + b.Name + `",
+			measurement: "` + c + `",
+			tag: "agent_name",
+			start: ` + fmt.Sprintf("%d", st) + `
+		)`
+	case c == "icingachk":
 		q = `from(bucket: "` + b.Name + `")
 		|> range(start: ` + fmt.Sprintf("%d", st) + `)
 		|> filter(fn: (r) => (r._measurement == "my-hostalive-icmp"
