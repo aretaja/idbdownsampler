@@ -213,6 +213,14 @@ func (i *Influx) GetDsInstances(b *Bucket, c string) (map[string][]string, error
 		|> keyValues(keyColumns: ["agent_name"])
 		|> keep(columns: ["_value"])
 		|> unique()`
+	case "gencounter":
+		q = `from(bucket: "` + b.Name + `")
+		|> range(start: ` + fmt.Sprintf("%d", st) + `)
+		|> filter(fn: (r) => r._measurement == "gencounter"
+		    and r._field == "feCor")
+		|> keyValues(keyColumns: ["agent_name"])
+		|> keep(columns: ["_value"])
+		|> unique()`
 	case "icingachk":
 		q = `from(bucket: "` + b.Name + `")
 		|> range(start: ` + fmt.Sprintf("%d", st) + `)
@@ -305,6 +313,10 @@ func (i *Influx) LastTS(b *Bucket, inst, col string) (time.Time, error) {
 		f = `r._measurement == "gengauge"
 			and r["agent_name"] == "` + inst + `"
 			and r._field == "InPower"`
+	case "gencounter":
+		f = `r._measurement == "gencounter"
+			and r["agent_name"] == "` + inst + `"
+			and r._field == "feCor"`
 	case "icingachk":
 		f = `(r._measurement == "my-hostalive-icmp"
 				or r._measurement == "my-hostalive-tcp"
@@ -581,6 +593,54 @@ func (i *Influx) Downsample(b *Bucket, inst string, col string) error {
 				allData
 					|> filter(fn: (r) => r["aggregate"] == "min")
 					|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: min, createEmpty: false)
+					|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")`
+		case b.From.First && col == "gencounter":
+			q = `allData =
+				from(bucket: "` + b.From.Name + `")
+				  |> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
+				  |> filter(fn: (r) => r._measurement == "gencounter"
+					  and r["agent_name"] == "` + inst + `")
+
+				toCountPsData =
+						allData
+						|> derivative(unit: 1s, nonNegative: true, columns: ["_value"], timeColumn: "_time")
+
+				allData
+					|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: last, createEmpty: false)
+					|> set(key: "aggregate", value: "last")
+					|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")
+
+				toCountPsData
+					|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: max, createEmpty: false)
+					|> map(fn: (r) => ({r with _field: r._field + "Max"}))
+					|> set(key: "aggregate", value: "max")
+					|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")
+
+				toCountPsData
+					|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: min, createEmpty: false)
+					|> map(fn: (r) => ({r with _field: r._field + "Min"}))
+					|> set(key: "aggregate", value: "min")
+					|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")`
+		case !b.From.First && col == "gencounter":
+			q = `allData =
+				from(bucket: "` + b.From.Name + `")
+					|> range(start: ` + fmt.Sprintf("%d", fTs.Unix()) + `, stop: ` + fmt.Sprintf("%d", tTs.Unix()) + `)
+					|> filter(fn: (r) => r._measurement == "gencounter"
+						and r["agent_name"] == "` + inst + `")
+
+				allData
+					|> filter(fn: (r) => r["aggregate"] == "max")
+					|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: max, createEmpty: false)
+					|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")
+
+				allData
+					|> filter(fn: (r) => r["aggregate"] == "min")
+					|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: min, createEmpty: false)
+					|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")
+
+				allData
+					|> filter(fn: (r) => r["aggregate"] == "last")
+					|> aggregateWindow(every: ` + b.AInterv.String() + `, fn: last, createEmpty: false)
 					|> to(org: "` + i.Org + `", bucket: "` + b.Name + `")`
 		case b.From.First && col == "icingachk":
 			q = `allData =
