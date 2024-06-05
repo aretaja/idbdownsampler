@@ -46,7 +46,7 @@ func (a *App) Initialize() {
 	}
 
 	// Create Influx instance
-	a.db = db.NewInflux(c.DbURL, c.Token, c.Org, c.StatsBucket, 600)
+	a.db = db.NewInflux(c.DbURL, c.Token, c.Org, c.StatsBucket, c.BwBucket, 600)
 
 	// Set memory limit if provided
 	if c.MemLimit > 0 {
@@ -280,7 +280,7 @@ func (a *App) Run() {
 		// Get instances
 		i, err := a.db.GetDsInstances(&buckets[0], c)
 		if err != nil {
-			helpers.PrintFatal(fmt.Sprintf("can't get buckets for collection %s, interrupting", c))
+			helpers.PrintFatal(fmt.Sprintf("can't get instances for collection %s, interrupting", c))
 		}
 
 		// Work on collection instance groups concurrently
@@ -301,4 +301,57 @@ func (a *App) Run() {
 	}
 	wg.Wait()
 	helpers.PrintFatal("fatal error, interrupting")
+}
+
+// StoreBwData starts the bandwidth usage calculation and storage process.
+//
+// This function does not take any parameters and does not have a return type.
+func (a *App) StoreBwData() {
+	ts := time.Now()
+
+	// Check if storage bucket is provided
+	if a.db.Bwb == "" {
+		helpers.PrintFatal("no storage bucket provided, interrupting")
+	}
+
+	a.startResMon()
+
+	// Get source bucket
+	buckets, err := a.collectionBuckets("ifstats")
+	if err != nil {
+		helpers.PrintFatal("can't get buckets for ifstats collection, interrupting")
+	}
+
+	// Get instances
+	bucket := buckets[0]
+	instances, err := a.db.GetAllInstances(&bucket, "ifstats")
+	if err != nil {
+		helpers.PrintFatal(fmt.Sprintf("can't get buckets for ifstats collection, error - %s, interrupting", err))
+	}
+
+	// Calculate and store bandwidth usage data
+	count := len(instances)
+	for i, inst := range instances {
+		helpers.PrintDbg(fmt.Sprintf("collection ifstats  instances:\n%# v, bucket:\n%# v", pretty.Formatter(inst), pretty.Formatter(bucket)))
+		helpers.PrintInfo(fmt.Sprintf("%d/%d %s %s %s", i+1, count, inst, bucket.Name, time.Since(ts).String()))
+		count--
+
+		// Check for resources
+		for {
+			if !a.db.DbHasResources {
+				helpers.PrintDbg("pause working for 30s, no resources available")
+				time.Sleep(30 * time.Second)
+				continue
+			}
+			break
+		}
+
+		err := a.db.StoreBwUsage(inst)
+		if err != nil {
+			helpers.PrintErr(fmt.Sprintf("error on store of bandwidth usage: %v", err))
+			time.Sleep(10 * time.Second)
+			continue
+		}
+	}
+	helpers.PrintInfo(fmt.Sprintf("all done %s", time.Since(ts).String()))
 }

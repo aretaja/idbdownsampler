@@ -1,7 +1,7 @@
 // Copyright 2024 by Marko Punnar <marko[AT]aretaja.org>
 // Use of this source code is governed by a Apache License 2.0 that can be found in the LICENSE file.
 
-// idbdownsampler is external application for downsampling InfluxDB metrics
+// storebwutildata is external application for calculating and storing bandwidth usage data of eth ports to InfluxDB metrics
 
 package main
 
@@ -13,7 +13,7 @@ import (
 )
 
 // Version of release
-const version string = "v0.1.1"
+const version string = "v0.0.1"
 
 // main is the entry point of the program.
 //
@@ -30,9 +30,8 @@ func main() {
 	}
 
 	a.Initialize()
-
 	helpers.PrintDbg("app initialized")
 
 	helpers.PrintDbg("running app")
-	a.Run()
+	a.StoreBwData()
 }
