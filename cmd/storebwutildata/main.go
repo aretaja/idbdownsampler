@@ -22,7 +22,7 @@ const version string = "v0.0.1"
 func main() {
 	log.SetFlags(log.Ldate | log.Lmicroseconds)
 
-	helpers.PrintInfo("start influxdb downsampler")
+	helpers.PrintInfo("start storebwutildata")
 	helpers.PrintDbg("initializing app")
 
 	a := &app.App{
