@@ -871,6 +871,20 @@ func (i *Influx) StoreBwUsage(inst string) error {
 		"90-100": (setvalue(v: r["100"]) * 100.0 / r.totaltime),
 		})
 	  )
+	  |> map(
+		fn: (r) =>({r with maxutil:
+          if r["90-100"] > 0 then "90-100"
+          else if r["80-90"] > 0 then "80-90"
+          else if r["70-80"] > 0 then "70-80"
+          else if r["60-70"] > 0 then "60-70"
+          else if r["50-60"] > 0 then "50-60"
+          else if r["40-50"] > 0 then "40-50"
+          else if r["30-40"] > 0 then "30-40"
+          else if r["20-30"] > 0 then "20-30"
+          else if r["10-20"] > 0 then "10-20"
+          else  "0-10"
+          })
+	  )
 	  |> set(key: "_measurement", value: "bwutil")
 	  |> to(
 		org: "Tele2",
