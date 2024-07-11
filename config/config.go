@@ -12,6 +12,7 @@ type Configuration struct {
 	Token         string  `env:"IDBDS_TOKEN"`
 	Org           string  `env:"IDBDS_ORG"`
 	StatsBucket   string  `env:"IDBDS_STATSBUCKET"`
+	BwBucket      string  `env:"IDBDS_BWBUCKET"`
 	DsCollections string  `env:"IDBDS_DSCOLLECTIONS"`
 	MemLimit      float64 `env:"IDBDS_MEMLIMIT"`
 	AggrCnt       int     `env:"IDBDS_AGGRCNT"`
