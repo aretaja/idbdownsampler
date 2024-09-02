@@ -310,12 +310,16 @@ func (i *Influx) LastTS(b *Bucket, inst, col string) (time.Time, error) {
 			and r._field == "ifOperStatus"`
 	case "gengauge":
 		f = `r._measurement == "gengauge"
-			and r["agent_name"] == "` + inst + `"
-			and r._field == "InPower"`
+			and r["agent_name"] == "` + inst + `"`
+		if !b.First {
+			f = f + ` and r["aggregate"] == "mean"`
+		}
 	case "gencounter":
 		f = `r._measurement == "gencounter"
-			and r["agent_name"] == "` + inst + `"
-			and r._field == "feCor"`
+			and r["agent_name"] == "` + inst + `"`
+		if !b.First {
+			f = f + ` and r["aggregate"] == "last"`
+		}
 	case "icingachk":
 		f = `(r._measurement == "my-hostalive-icmp"
 				or r._measurement == "my-hostalive-tcp"
