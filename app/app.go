@@ -157,9 +157,7 @@ func (a *App) startResMon() {
 
 			switch {
 			case tasks == nil:
-				helpers.PrintWarn(fmt.Sprintf("pause working, no running tasks info, retry after %ds", interv))
-				a.db.DbHasResources = false
-				continue
+				helpers.PrintWarn("no running tasks info, assume 0")
 			case *tasks > 0:
 				helpers.PrintWarn(fmt.Sprintf("pause working, %0.f running tasks, retry after %ds", *tasks, interv))
 				a.db.DbHasResources = false
@@ -178,9 +176,7 @@ func (a *App) startResMon() {
 
 			switch {
 			case mem == nil:
-				helpers.PrintWarn(fmt.Sprintf("pause working, no allocated memory info, retry after %ds", interv))
-				a.db.DbHasResources = false
-				continue
+				helpers.PrintWarn("no allocated memory info, assume limit not exceeded")
 			case *mem > a.db.DsMemLimit:
 				helpers.PrintWarn(fmt.Sprintf("pause working, memory usage %0.f%%, retry after %ds", *mem, interv))
 				a.db.DbHasResources = false

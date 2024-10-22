@@ -13,7 +13,7 @@ import (
 )
 
 // Version of release
-const version string = "v0.1.3"
+const version string = "v0.1.4"
 
 // main is the entry point of the program.
 //
