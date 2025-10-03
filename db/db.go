@@ -59,10 +59,10 @@ func NewInflux(url, token, org, sb, bw string, timeout uint) Influx {
 // Returns a pointer to float64 and an error.
 func (i *Influx) GetRunningTasks() (*float64, error) {
 	q := `from(bucket: "` + i.Statsb + `")
-  |> range(start: -15s)
-  |> filter(fn: (r) => r["_measurement"] == "task_executor_total_runs_active"
-      and r._field == "gauge")
-  |> last()`
+  	|> range(start: -15s)
+  	|> filter(fn: (r) => r["_measurement"] == "prometheus_influxdb"
+  	    and r._field == "task_executor_total_runs_active")
+  	|> last()`
 
 	var count *float64
 
@@ -92,22 +92,17 @@ func (i *Influx) GetRunningTasks() (*float64, error) {
 // No parameters.
 // Returns a pointer to float64 and an error.
 func (i *Influx) GetMemUsage() (*float64, error) {
-	q := `bytes_used = from(bucket: "` + i.Statsb + `")
+	q := `from(bucket: "` + i.Statsb + `")
 	|> range(start: -15s)
-	|> filter(fn: (r) => r._measurement == "go_memstats_alloc_bytes"
-	    and r._field == "gauge")
-	|> last()
-
-	total_bytes = from(bucket: "` + i.Statsb + `")
-		|> range(start: -15s)
-		|> filter(fn: (r) => r._measurement == "go_memstats_sys_bytes"
-		    and r._field == "gauge")
-		|> last()
-
-	join(tables: {key1: bytes_used, key2: total_bytes}, on: ["_time", "_field"], method: "inner")
-		|> map(fn: (r) => ({
-		_value: (float(v: r._value_key1) / float(v: r._value_key2)) * 100.0
-		}))`
+	|> filter(fn: (r) => r._measurement == "prometheus_influxdb")
+  	|> filter(fn: (r) => r._field == "go_memstats_alloc_bytes" or r._field == "go_memstats_sys_bytes")
+  	|> aggregateWindow(every: 10s, fn: mean, createEmpty: false)
+  	|> drop(columns: ["_start", "_stop"])
+  	|> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+  	|> map(fn: (r) => ({
+ 	   _value: float(v: r.go_memstats_alloc_bytes) / float(v: r.go_memstats_sys_bytes) * 100.0,
+ 	 }))
+  	|> last()`
 
 	var used *float64
 
