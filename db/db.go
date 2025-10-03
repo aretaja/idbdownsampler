@@ -92,7 +92,7 @@ func (i *Influx) GetRunningTasks() (*float64, error) {
 // No parameters.
 // Returns a pointer to float64 and an error.
 func (i *Influx) GetMemUsage() (*float64, error) {
-	q := `bytes_used = from(bucket: "` + i.Statsb + `")
+	q := `from(bucket: "` + i.Statsb + `")
 	|> range(start: -15s)
 	|> filter(fn: (r) => r._measurement == "prometheus_influxdb")
   	|> filter(fn: (r) => r._field == "go_memstats_alloc_bytes" or r._field == "go_memstats_sys_bytes")
