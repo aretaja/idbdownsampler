@@ -846,7 +846,7 @@ func (i *Influx) StoreBwUsage(inst string) error {
 	  |> events.duration(unit: 1s, columnName: "duration")
 
 	union(tables: [otable, itable])
-	  |> group(columns: ["agent_host", "agent_name", "util", "direction", "ifDescr", "ifName", "index"])
+	  |> group(columns: ["source", "agent_name", "util", "direction", "ifDescr", "ifName", "index"])
 	  |> sum(column: "duration")
 	  |> map(
 		fn: (r) =>({r with _time: yesterday.stop}),
@@ -857,7 +857,7 @@ func (i *Influx) StoreBwUsage(inst string) error {
 		fn: (r) =>({r with totaltime: setvalue(v: r["10"]) + setvalue(v: r["20"]) + setvalue(v: r["30"]) + setvalue(v: r["40"]) + setvalue(v: r["50"]) + setvalue(v: r["60"]) + setvalue(v: r["70"]) + setvalue(v: r["80"]) + setvalue(v: r["90"]) + setvalue(v: r["100"])})
 	  )
 	  |> map(
-		fn: (r) =>({_time: r._time, _measurement: r._measurement, agent_host: r.agent_host, agent_name: r.agent_name, ifDescr: r.ifDescr, ifName: r.ifName, index: r.index, direction: r.direction,
+		fn: (r) =>({_time: r._time, _measurement: r._measurement, agent_host: r.source, agent_name: r.agent_name, ifDescr: r.ifDescr, ifName: r.ifName, index: r.index, direction: r.direction,
 		"0-10": (setvalue(v: r["10"]) * 100.0 / r.totaltime),
 		"10-20": (setvalue(v: r["20"]) * 100.0 / r.totaltime),
 		"20-30": (setvalue(v: r["30"]) * 100.0 / r.totaltime),
