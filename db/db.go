@@ -817,13 +817,28 @@ func (i *Influx) StoreBwUsage(inst string) error {
 	  |> filter(fn: (r) => r["ifType"] == "6")
 
 	counterData = allData
-	  |> filter(fn: (r) => r._field == "ifHCOutOctets" or r._field == "ifHCInOctets")
+	  |> filter(fn: (r) => r._field =~ /if(?:HC|)OutOctets/ or r._field =~ /if(?:HC|)InOctets/)
 	  |> derivative(unit: 1s, nonNegative: true, columns: ["_value"], timeColumn: "_time")
 	  |> map(fn: (r) => ({r with _value: r._value * 8.0}))
+	  |> map(
+	    fn: (r) => ({r with _field:
+	      if r._field == "ifOutOctets" then "ifHCOutOctets"
+	      else if r._field == "ifInOctets" then "ifHCInOctets"
+	      else r._field})
+        )
 
 	ifSpeed = allData
-	  |> filter(fn: (r) => r._field  == "ifHighSpeed")
-	  |> map(fn: (r) => ({r with _value: float(v: r._value) * 1000000.0}))
+	  |> filter(fn: (r) => r._field =~ /if(?:High|)Speed/)
+	  |> map(
+	    fn: (r) => ({r with _value:
+	      if r._field == "ifHighSpeed" then float(v: r._value) * 1000000.0
+	      else float(v: r._value)})
+        )
+	  |> map(
+	    fn: (r) => ({r with _field:
+	      if r._field == "ifSpeed" then "ifHighSpeed"
+	      else r._field})
+        )
 
 	fulltable = union(tables: [counterData, ifSpeed])
 	  |> filter(fn: (r) => r._value > 0)
